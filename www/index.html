@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="UTF-8">
+    <title>Roch Teleop Tutorials</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- ROS related -->
+    <script type="text/javascript" src="js/easeljs/easeljs.js"></script>
+    <script type="text/javascript" src="js/eventemitter2/eventemitter2.js"></script>
+    <script type="text/javascript" src="js/ros/roslib.js"></script>
+    <script type="text/javascript" src="js/ros/ros2d.js"></script>
+    <script type="text/javascript" src="js/ros/worldlib.js"></script>
+    <script type="text/javascript" src="js/model/Robot.js"></script>
+
+    <!-- Le styles -->
+    <link href="css/bootstrap.css" rel="stylesheet"></link>
+    <link href="css/bootstrap-button.css" rel="stylesheet"></link>
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap/bootstrap.js"></script>
+    <script src="js/bootstrap/bootstrap-button.js"></script>
+	
+
+    <link href="css/bootstrap-responsive.css" rel="stylesheet"></link>
+
+    <script type="text/javascript">
+      var ros = new ROSLIB.Ros();
+      var defaultUrL = 'ws://192.168.0.100:9090';
+      var viewer;
+      var gridClient;
+      var addButtonUp;
+      var circle_region_poller;
+      var ar_region_poller;
+      var annotator;
+      if(typeof teleopPosition == "undefined"){
+          var teleopPosition = {};
+          teleopPosition.up = 0;
+          teleopPosition.down = 1;
+          teleopPosition.left = 2;
+          teleopPosition.right = 3;
+          teleopPosition.stop = 4;
+      }
+      $().ready(function(e) {
+
+        initHeader();        
+        
+        var nw = $('#nav-wrapper');
+        nw.css('margin-top','20pt');
+      });
+
+      function initHeader()
+      {
+        settingROSCallbacks();
+
+        ros.connect(defaultUrL);
+
+        $('#connectbtn').on('click',function(e) {
+            var va = $('#focusedInput').val();
+            ros.connect(va);
+            return false;
+        });
+        $('#upbtn').on('click',function(e) {
+            publishSpeed(teleopPosition.up);
+            return false;
+        });
+        $('#leftbtn').on('click',function(e) {
+            publishSpeed(teleopPosition.left);
+            return false;
+        });
+        $('#rightbtn').on('click',function(e) {
+            publishSpeed(teleopPosition.right);
+            return false;
+        });
+        $('#downbtn').on('click',function(e) {
+            publishSpeed(teleopPosition.down);
+            return false;
+        });
+        $('#stopbtn').on('click',function(e) {
+            publishSpeed(teleopPosition.stop);
+            return false;
+        });
+      }
+
+      function publishSpeed(options)
+      {
+
+       // console.log('MAX VAL: ' + options);
+        // Publishing a Topic
+        // ------------------
+
+        var cmdVel = new ROSLIB.Topic({
+          ros : ros,
+          name : '/roch_velocity_controller/cmd_vel',
+          messageType : 'geometry_msgs/Twist'
+        });
+        switch(options)
+        {
+          case teleopPosition.up:
+            var twist = new ROSLIB.Message({
+              linear : {
+                x : 0.1,
+                y : 0.0,
+                z : 0.0
+              },
+              angular : {
+                x : 0.0,
+                y : 0.0,
+                z : 0.0
+              }
+            });
+            break;
+          case teleopPosition.down:
+            var twist = new ROSLIB.Message({
+              linear : {
+                x : -0.1,
+                y : 0.0,
+                z : 0.0
+              },
+              angular : {
+                x : 0.0,
+                y : 0.0,
+                z : 0.0
+              }
+            });
+            break;
+          case teleopPosition.left:
+            var twist = new ROSLIB.Message({
+              linear : {
+                x : 0.0,
+                y : 0.0,
+                z : 0.0
+              },
+              angular : {
+                x : 0.3,
+                y : 0.0,
+                z : 0.0
+              }
+            });
+            break;
+          case teleopPosition.right:
+            var twist = new ROSLIB.Message({
+              linear : {
+                x : 0.0,
+                y : 0.0,
+                z : 0.0
+              },
+              angular : {
+                x : -0.3,
+                y : 0.0,
+                z : 0.0
+              }
+            });
+            break;
+          case teleopPosition.stop:
+            var twist = new ROSLIB.Message({
+              linear : {
+                x : 0.0,
+                y : 0.0,
+                z : 0.0
+              },
+              angular : {
+                x : 0.0,
+                y : 0.0,
+                z : 0.0
+              }
+            });
+            break;
+        }
+        cmdVel.publish(twist);
+        
+
+      }
+
+      function settingROSCallbacks()                      
+      {
+        ros.on('connection',function() {
+          console.log("Connected");
+          // subscribe to order list
+                                                     
+          $('#connectbtn').attr('disabled',true);
+          $('#focusedInput').attr('disabled',true);
+
+        }
+        );
+        ros.on('error',function(e) {
+          console.log("Error!",e);
+        }
+        );
+                                                     
+        ros.on('close',function() {
+          console.log("Connection Close!");
+          $('#connectbtn').attr('disabled',false);
+          $('#focusedInput').attr('disabled',false);
+        }
+        );
+
+      }
+
+    </script>
+	<style>
+		#viewbtn{position:relative; }
+		#viewbtn>button{position:absolute;}
+		
+		#upbtn{left:50%;top:5%}
+		#stopbtn{left:50%;top:200%}
+		#leftbtn{left:20%;top:200%}
+		#rightbtn{left:80%;top:200%}
+		#downbtn{left:50%;top:400%}
+		
+	 
+	</style>
+  </head>
+  <body>
+    <!-- Header -->
+    <div class="navbar navbar-inverse ">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <img class="brand" style="height:100px; width:110px;" src="img/Roch_logo.png"></img>
+          <a class="brand" href="#" style="margin-top:6px">Roch Teleop Tutorial</a>
+          <p class="input-prepend navbar-text pull-right" style="margin-top:7px">
+            <input class="input-large" id="focusedInput" type="text" value="ws://192.168.0.100:9090"></input>
+            <button id="connectbtn" class="btn btn-primary btn-normal" data-loading-text="Connecting...">Connect</button>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row-fluid" >
+        <!-- Forward -->
+        <div class="span9" id="viewbtn">
+                 
+            <button id="upbtn" class="btn btn-primary btn-normal" data-loading-text="Forward">Forward</button>
+            <button id="leftbtn" class="btn btn-primary btn-normal" data-loading-text="Left">Left</button>   
+            <button id="stopbtn" class="btn btn-primary btn-normal" data-loading-text="Stop">Stop</button>
+            <button id="rightbtn" class="btn btn-primary btn-normal" data-loading-text="Right">Right</button>
+            <button id="downbtn" class="btn btn-primary btn-normal" data-loading-text="Backward">Backward</button>
+			
+        </div>
+        <div id="middle-left" class="span3">
+          <div class="well sidebar-nav">
+            <center>
+            <h2> Camera </h2>
+            </center>
+            <ul id="nav-orders" class"nav nav-list">
+            </ul>
+          </div><!-- well -->
+        </div><!-- middle-left-->
+      </div>
+	  <br/>
+	  <br/>
+	  <br/>
+      <hr/>
+      <footer>
+        <img style="width:120px; height:50px;" src="img/SawYer_Robotics_logo.png"></img>
+        &copy 2017
+      </footer>
+    </div>
+
+  </body>
+</html>
